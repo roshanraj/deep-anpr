@@ -24,11 +24,9 @@ Routines for training the network.
 
 """
 
-
 __all__ = (
     'train',
 )
-
 
 import functools
 import glob
@@ -46,6 +44,9 @@ import common
 import gen
 import model
 
+
+
+MULTI_PL = 10
 
 def code_to_vec(p, code):
     def char_to_vec(c):
@@ -94,7 +95,7 @@ def mpgen(f):
 
     @functools.wraps(f)
     def wrapped(*args, **kwargs):
-        q = multiprocessing.Queue(3) 
+        q = multiprocessing.Queue(3)
         proc = multiprocessing.Process(target=main,
                                        args=(q, args, kwargs))
         proc.start()
@@ -107,7 +108,7 @@ def mpgen(f):
             proc.join()
 
     return wrapped
-        
+
 
 @mpgen
 def read_batches(batch_size):
@@ -145,22 +146,22 @@ def train(learn_rate, report_steps, batch_size, initial_weights=None):
     """
     x, y, params = model.get_training_model()
 
-    y_ = tf.placeholder(tf.float32, [None, 7 * len(common.CHARS) + 1])
+    y_ = tf.placeholder(tf.float32, [None, MULTI_PL * len(common.CHARS) + 1])
 
     digits_loss = tf.nn.softmax_cross_entropy_with_logits(
-                                          tf.reshape(y[:, 1:],
-                                                     [-1, len(common.CHARS)]),
-                                          tf.reshape(y_[:, 1:],
-                                                     [-1, len(common.CHARS)]))
+        tf.reshape(y[:, 1:],
+                   [-1, len(common.CHARS)]),
+        tf.reshape(y[:, 1:],
+                   [-1, len(common.CHARS)]))
     digits_loss = tf.reduce_sum(digits_loss)
     presence_loss = 10. * tf.nn.sigmoid_cross_entropy_with_logits(
-                                                          y[:, :1], y_[:, :1])
+        y[:, :1], y_[:, :1])
     presence_loss = tf.reduce_sum(presence_loss)
     cross_entropy = digits_loss + presence_loss
     train_step = tf.train.AdamOptimizer(learn_rate).minimize(cross_entropy)
 
-    best = tf.argmax(tf.reshape(y[:, 1:], [-1, 7, len(common.CHARS)]), 2)
-    correct = tf.argmax(tf.reshape(y_[:, 1:], [-1, 7, len(common.CHARS)]), 2)
+    best = tf.argmax(tf.reshape(y[:, 1:], [-1, MULTI_PL, len(common.CHARS)]), 2)
+    correct = tf.argmax(tf.reshape(y_[:, 1:], [-1, MULTI_PL, len(common.CHARS)]), 2)
 
     if initial_weights is not None:
         assert len(params) == len(initial_weights)
@@ -181,10 +182,10 @@ def train(learn_rate, report_steps, batch_size, initial_weights=None):
                       cross_entropy],
                      feed_dict={x: test_xs, y_: test_ys})
         num_correct = numpy.sum(
-                        numpy.logical_or(
-                            numpy.all(r[0] == r[1], axis=1),
-                            numpy.logical_and(r[2] < 0.5,
-                                              r[3] < 0.5)))
+            numpy.logical_or(
+                numpy.all(r[0] == r[1], axis=1),
+                numpy.logical_and(r[2] < 0.5,
+                                  r[3] < 0.5)))
         r_short = (r[0][:190], r[1][:190], r[2][:190], r[3][:190])
         for b, c, pb, pc in zip(*r_short):
             print "{} {} <-> {} {}".format(vec_to_plate(c), pc,
@@ -200,7 +201,7 @@ def train(learn_rate, report_steps, batch_size, initial_weights=None):
             r[4],
             r[5],
             "".join("X "[numpy.array_equal(b, c) or (not pb and not pc)]
-                                           for b, c, pb, pc in zip(*r_short)))
+                    for b, c, pb, pc in zip(*r_short)))
 
     def do_batch():
         sess.run(train_step,
@@ -227,7 +228,7 @@ def train(learn_rate, report_steps, batch_size, initial_weights=None):
                     if last_batch_idx != batch_idx:
                         print "time for 60 batches {}".format(
                             60 * (last_batch_time - batch_time) /
-                                            (last_batch_idx - batch_idx))
+                            (last_batch_idx - batch_idx))
                         last_batch_idx = batch_idx
                         last_batch_time = batch_time
 

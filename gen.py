@@ -156,11 +156,21 @@ def make_affine_transform(from_shape, to_shape,
 
 
 def generate_code():
-    return "{}{}{}{} {}{}{}".format(
+    return "{}{} {}{} {}{} {}{}{}{}".format(
         random.choice(common.LETTERS),
         random.choice(common.LETTERS),
+
         random.choice(common.DIGITS),
         random.choice(common.DIGITS),
+
+	random.choice(common.LETTERS),
+        random.choice(common.LETTERS),
+
+        random.choice(common.DIGITS),
+        random.choice(common.DIGITS),
+
+
+        random.choice(common.LETTERS),
         random.choice(common.LETTERS),
         random.choice(common.LETTERS),
         random.choice(common.LETTERS))
@@ -215,8 +225,11 @@ def generate_plate(font_height, char_ims):
 def generate_bg():
     found = False
     while not found:
+        # bg = cv2.imread("bgs/{:08d}.jpg".format(random.randint(0, 108600)),
+        #                 cv2.CV_LOAD_IMAGE_GRAYSCALE) / 255.
         bg = cv2.imread("bgs/{:08d}.jpg".format(random.randint(0, 108600)),
-                        cv2.CV_LOAD_IMAGE_GRAYSCALE) / 255.
+                        0) / 255.
+
         if (bg.shape[1] >= OUTPUT_SHAPE[1] and
             bg.shape[0] >= OUTPUT_SHAPE[0]):
             found = True
